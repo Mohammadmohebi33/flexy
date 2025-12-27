@@ -1,7 +1,15 @@
 package main
 
-import "fmt"
+import (
+	"flexy/repository/migrator"
+	"flexy/repository/sqlite"
+)
 
 func main() {
-	fmt.Println("Hello World")
+
+	config := sqlite.Config{
+		FilePath: "./database.db",
+	}
+	migrator := migrator.New(config)
+	migrator.Up()
 }
