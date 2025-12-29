@@ -1,24 +1,29 @@
 package httpserver
 
 import (
+	"flexy/delivery/httpserver/authhandler"
+	"flexy/service/authservice"
 	"fmt"
 
 	"github.com/labstack/echo/v4"
 )
 
 type Server struct {
-	Router *echo.Echo
+	authHandler authhandler.Handler
+	Router      *echo.Echo
 }
 
-func New() Server {
+func New(authSvc authservice.Service) Server {
 	return Server{
-		Router: echo.New(),
+		Router:      echo.New(),
+		authHandler: authhandler.New(authSvc),
 	}
 }
 
 func (s Server) Serve() {
 	// Routes
 	s.Router.GET("/health-check", s.healthCheck)
+	s.authHandler.SetRoutes(s.Router)
 
 	// Start server
 	address := fmt.Sprintf(":%d", 8080)

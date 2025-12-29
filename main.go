@@ -2,8 +2,9 @@ package main
 
 import (
 	"flexy/delivery/httpserver"
-	"flexy/repository/migrator"
 	"flexy/repository/sqlite"
+	"flexy/repository/sqlite/usersqlite"
+	"flexy/service/authservice"
 )
 
 func main() {
@@ -11,9 +12,13 @@ func main() {
 	config := sqlite.Config{
 		FilePath: "./database.db",
 	}
-	migrator := migrator.New(config)
-	migrator.Up()
+	//migrator := migrator.New(config)
+	//migrator.Up()
+	//
 
-	server := httpserver.New()
+	database := sqlite.New(config)
+	authRepo := usersqlite.New(database)
+	authService := authservice.New(authRepo)
+	server := httpserver.New(authService)
 	server.Serve()
 }
