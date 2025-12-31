@@ -9,6 +9,7 @@ type User struct {
 	Name            string     `json:"name"`
 	Email           string     `json:"email"`
 	EmailVerifiedAt *time.Time `json:"email_verified_at"`
+	IsVerified      bool       `json:"is_verified"`
 	Password        string     `json:"-"`
 	ScoreWeek       int        `json:"score_week"`
 	ScoreMonth      int        `json:"score_month"`

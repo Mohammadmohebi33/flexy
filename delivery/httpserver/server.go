@@ -26,7 +26,7 @@ func (s Server) Serve() {
 	s.authHandler.SetRoutes(s.Router)
 
 	// Start server
-	address := fmt.Sprintf(":%d", 8080)
+	address := fmt.Sprintf(":%d", 8081)
 	fmt.Printf("start echo server on %s\n", address)
 	if err := s.Router.Start(address); err != nil {
 		fmt.Println("router start error", err)
