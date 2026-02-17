@@ -1,17 +1,22 @@
 package authservice
 
 import (
-	"crypto/md5"
-	"encoding/hex"
-	"flexy/adapter/redis"
-	"flexy/entity"
+	"context"
+	"crypto/rand"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"time"
+
+	"flexy/adapter/redis"
+	"flexy/dto"
+	"flexy/entity"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Repository interface {
 	RegisterUser(u entity.User) (entity.User, error)
+	LoginUser(u entity.User) (entity.User, error)
 }
 
 type Service struct {
@@ -32,12 +37,79 @@ func New(repo Repository) Service {
 	}
 }
 
-func getMD5Hash(text string) string {
-	hash := md5.Sum([]byte(text))
-	return hex.EncodeToString(hash[:])
+func (s Service) Register(req dto.RegisterRequest) (dto.RegisterResponse, error) {
+
+	hashedPassword, err := hashPassword(req.Password)
+	if err != nil {
+		return dto.RegisterResponse{}, fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	user := entity.User{
+		ID:       0,
+		Email:    req.Email,
+		Name:     req.Name,
+		Password: hashedPassword,
+	}
+
+	createdUser, err := s.repo.RegisterUser(user)
+	if err != nil {
+		return dto.RegisterResponse{}, fmt.Errorf("failed to register user: %w", err)
+	}
+
+	otp, err := generateOTP()
+	if err != nil {
+		return dto.RegisterResponse{}, fmt.Errorf("failed to generate otp: %w", err)
+	}
+
+	key := fmt.Sprintf("verify:%d", createdUser.ID)
+	ctx := context.Background()
+
+	err = s.redisAdapter.Client().Set(ctx, key, otp, 3*time.Minute).Err()
+	if err != nil {
+		return dto.RegisterResponse{}, fmt.Errorf("failed to store otp: %w", err)
+	}
+
+	// TODO: send OTP to user's email here (e.g. via email service)
+
+	return dto.RegisterResponse{
+		ID:    uint(createdUser.ID),
+		Name:  createdUser.Name,
+		Email: createdUser.Email,
+	}, nil
 }
 
-func generateOTP() string {
-	rand.Seed(time.Now().UnixNano())
-	return fmt.Sprintf("%06d", rand.Intn(1000000))
+func (s Service) Login(req dto.LoginRequest) (dto.LoginResponse, error) {
+
+	user := entity.User{
+		Email:    req.Email,
+		Password: req.Password,
+	}
+
+	loggedInUser, err := s.repo.LoginUser(user)
+	if err != nil {
+		return dto.LoginResponse{}, fmt.Errorf("invalid credentials: %w", err)
+	}
+
+	return dto.LoginResponse{
+		ID:    uint(loggedInUser.ID),
+		Name:  loggedInUser.Name,
+		Email: loggedInUser.Email,
+	}, nil
+}
+
+func hashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
+}
+
+func generateOTP() (string, error) {
+	max := big.NewInt(1_000_000)
+	n, err := rand.Int(rand.Reader, max)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%06d", n.Int64()), nil
 }

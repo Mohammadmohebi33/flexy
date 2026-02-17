@@ -6,4 +6,5 @@ func (h Handler) SetRoutes(e *echo.Echo) {
 	userGroup := e.Group("/auth")
 
 	userGroup.POST("/register", h.userRegister)
+	userGroup.POST("/login", h.userLogin)
 }
