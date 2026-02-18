@@ -9,5 +9,4 @@ type LoginRequest struct {
 type LoginResponse struct {
 	ID    uint   `json:"id"`
 	Email string `json:"email"`
-	Name  string `json:"name"`
 }

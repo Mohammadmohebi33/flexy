@@ -19,13 +19,20 @@ type Repository interface {
 	LoginUser(u entity.User) (entity.User, error)
 }
 
+type AuthGenerator interface {
+	CreateAccessToken(user entity.User) (string, error)
+	CreateRefreshToken(user entity.User) (string, error)
+}
+
 type Service struct {
+	auth         AuthGenerator
 	repo         Repository
 	redisAdapter redis.Adapter
 }
 
-func New(repo Repository) Service {
+func New(authGenerator AuthGenerator, repo Repository) Service {
 	return Service{
+		auth: authGenerator,
 		repo: repo,
 		redisAdapter: redis.New(
 			redis.Config{
@@ -90,10 +97,24 @@ func (s Service) Login(req dto.LoginRequest) (dto.LoginResponse, error) {
 		return dto.LoginResponse{}, fmt.Errorf("invalid credentials: %w", err)
 	}
 
+	accessToken, err := s.auth.CreateAccessToken(user)
+	if err != nil {
+		return dto.LoginResponse{}, fmt.Errorf("unexpected error: %w", err)
+	}
+
+	refreshToken, err := s.auth.CreateRefreshToken(user)
+	if err != nil {
+		return dto.LoginResponse{}, fmt.Errorf("unexpected error: %w", err)
+	}
+
 	return dto.LoginResponse{
 		ID:    uint(loggedInUser.ID),
 		Name:  loggedInUser.Name,
 		Email: loggedInUser.Email,
+		Tokens: dto.Tokens{
+			AccessToken:  accessToken,
+			RefreshToken: refreshToken,
+		},
 	}, nil
 }
 
