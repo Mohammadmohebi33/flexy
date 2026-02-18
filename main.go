@@ -4,7 +4,7 @@ import (
 	"flexy/delivery/httpserver"
 	"flexy/repository/sqlite"
 	"flexy/repository/sqlite/usersqlite"
-	"flexy/service/authservice"
+	"flexy/service/userservice"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 
 	database := sqlite.New(config)
 	authRepo := usersqlite.New(database)
-	authService := authservice.New(authRepo)
+	authService := userservice.New(authRepo)
 	server := httpserver.New(authService)
 	server.Serve()
 }

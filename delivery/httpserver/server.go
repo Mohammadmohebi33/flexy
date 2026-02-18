@@ -2,7 +2,7 @@ package httpserver
 
 import (
 	"flexy/delivery/httpserver/authhandler"
-	"flexy/service/authservice"
+	"flexy/service/userservice"
 	"fmt"
 
 	"github.com/labstack/echo/v4"
@@ -13,7 +13,7 @@ type Server struct {
 	Router      *echo.Echo
 }
 
-func New(authSvc authservice.Service) Server {
+func New(authSvc userservice.Service) Server {
 	return Server{
 		Router:      echo.New(),
 		authHandler: authhandler.New(authSvc),

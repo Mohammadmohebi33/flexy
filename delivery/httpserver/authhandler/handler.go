@@ -1,12 +1,12 @@
 package authhandler
 
-import "flexy/service/authservice"
+import "flexy/service/userservice"
 
 type Handler struct {
-	authSvc authservice.Service
+	authSvc userservice.Service
 }
 
-func New(authSvc authservice.Service) Handler {
+func New(authSvc userservice.Service) Handler {
 	return Handler{
 		authSvc: authSvc,
 	}
